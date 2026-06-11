@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GM2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #0a0a0f;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            overflow: hidden;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Animated background gradient */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 40%, rgba(120, 0, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 60%, rgba(255, 0, 100, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(0, 200, 255, 0.04) 0%, transparent 60%);
+            animation: bgShift 12s ease-in-out infinite alternate;
+            z-index: 0;
+        }
+
+        @keyframes bgShift {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(-5%, -3%) rotate(8deg);
+            }
+        }
+
+        /* Tap overlay - shown before user interaction */
+        #tapOverlay {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+        }
+
+        #tapOverlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .tap-icon {
+            width: 100px;
+            height: 100px;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            animation: tapPulse 2s ease-in-out infinite;
+            position: relative;
+        }
+
+        .tap-icon::after {
+            content: '';
+            position: absolute;
+            inset: -12px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.06);
+            animation: tapRing 2s ease-in-out infinite 0.3s;
+        }
+
+        @keyframes tapPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                border-color: rgba(255, 255, 255, 0.15);
+            }
+
+            50% {
+                transform: scale(1.08);
+                border-color: rgba(255, 255, 255, 0.3);
+            }
+        }
+
+        @keyframes tapRing {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.15);
+                opacity: 0.3;
+            }
+        }
+
+        .tap-icon svg {
+            width: 40px;
+            height: 40px;
+            fill: white;
+            opacity: 0.8;
+        }
+
+        .tap-text {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            font-weight: 300;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        /* Main visualizer container */
+        #visualizer {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 0.8s ease 0.3s, transform 0.8s ease 0.3s;
+        }
+
+        #visualizer.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Audio bars visualizer */
+        .bars {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 4px;
+            height: 120px;
+        }
+
+        .bar {
+            width: 6px;
+            border-radius: 3px;
+            background: linear-gradient(to top, #7c3aed, #ec4899);
+            transition: height 0.1s ease;
+            animation: barIdle 1.5s ease-in-out infinite;
+        }
+
+        .bar:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .bar:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .bar:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        .bar:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+
+        .bar:nth-child(5) {
+            animation-delay: 0.15s;
+        }
+
+        .bar:nth-child(6) {
+            animation-delay: 0.25s;
+        }
+
+        .bar:nth-child(7) {
+            animation-delay: 0.35s;
+        }
+
+        .bar:nth-child(8) {
+            animation-delay: 0.05s;
+        }
+
+        .bar:nth-child(9) {
+            animation-delay: 0.2s;
+        }
+
+        .bar:nth-child(10) {
+            animation-delay: 0.3s;
+        }
+
+        .bar:nth-child(11) {
+            animation-delay: 0.1s;
+        }
+
+        .bar:nth-child(12) {
+            animation-delay: 0.25s;
+        }
+
+        @keyframes barIdle {
+
+            0%,
+            100% {
+                height: 20px;
+            }
+
+            50% {
+                height: 60px;
+            }
+        }
+
+        .playing .bar {
+            animation: barActive 0.6s ease-in-out infinite alternate;
+        }
+
+        .playing .bar:nth-child(1) {
+            animation-duration: 0.5s;
+        }
+
+        .playing .bar:nth-child(2) {
+            animation-duration: 0.7s;
+        }
+
+        .playing .bar:nth-child(3) {
+            animation-duration: 0.4s;
+        }
+
+        .playing .bar:nth-child(4) {
+            animation-duration: 0.6s;
+        }
+
+        .playing .bar:nth-child(5) {
+            animation-duration: 0.55s;
+        }
+
+        .playing .bar:nth-child(6) {
+            animation-duration: 0.45s;
+        }
+
+        .playing .bar:nth-child(7) {
+            animation-duration: 0.65s;
+        }
+
+        .playing .bar:nth-child(8) {
+            animation-duration: 0.5s;
+        }
+
+        .playing .bar:nth-child(9) {
+            animation-duration: 0.7s;
+        }
+
+        .playing .bar:nth-child(10) {
+            animation-duration: 0.4s;
+        }
+
+        .playing .bar:nth-child(11) {
+            animation-duration: 0.55s;
+        }
+
+        .playing .bar:nth-child(12) {
+            animation-duration: 0.6s;
+        }
+
+        @keyframes barActive {
+            0% {
+                height: 15px;
+            }
+
+            100% {
+                height: 110px;
+            }
+        }
+
+        .status-text {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 13px;
+            font-weight: 300;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+        }
+
+        /* Volume indicator */
+        .volume-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .volume-badge.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .volume-badge svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Tap to start overlay -->
+    <div id="tapOverlay">
+        <div class="tap-icon">
+            <svg viewBox="0 0 24 24">
+                <path
+                    d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+            </svg>
+        </div>
+        <p class="tap-text">Toca para reproducir</p>
+    </div>
+
+    <!-- Volume badge -->
+    <div class="volume-badge" id="volumeBadge">
+        <svg viewBox="0 0 24 24">
+            <path
+                d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+        </svg>
+        <span id="volumeText">VOL MAX</span>
+    </div>
+
+    <!-- Visualizer -->
+    <div id="visualizer">
+        <div class="bars" id="bars">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+        <p class="status-text" id="statusText">Reproduciendo</p>
+    </div>
+
+    <audio id="audio" loop preload="auto">
+        <source src="gm2.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const audio = document.getElementById('audio');
+        const tapOverlay = document.getElementById('tapOverlay');
+        const visualizer = document.getElementById('visualizer');
+        const bars = document.getElementById('bars');
+        const volumeBadge = document.getElementById('volumeBadge');
+        let started = false;
+
+        // Set volume to max
+        audio.volume = 1.0;
+
+        // Try autoplay immediately (works on some browsers/contexts)
+        function tryAutoplay() {
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    // Autoplay worked!
+                    onPlaybackStarted();
+                }).catch(() => {
+                    // Autoplay blocked - wait for user interaction
+                    console.log('Autoplay bloqueado, esperando interacción...');
+                });
+            }
+        }
+
+        function onPlaybackStarted() {
+            if (started) return;
+            started = true;
+
+            // Hide overlay
+            tapOverlay.classList.add('hidden');
+
+            // Show visualizer
+            visualizer.classList.add('active');
+            bars.classList.add('playing');
+
+            // Show volume badge
+            volumeBadge.classList.add('show');
+            setTimeout(() => {
+                volumeBadge.classList.remove('show');
+            }, 3000);
+
+            // Try to maximize volume on mobile devices
+            maximizeVolume();
+        }
+
+        function maximizeVolume() {
+            audio.volume = 1.0;
+
+            // Use AudioContext gain node to boost volume even further
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    const ctx = new AudioContext();
+                    const source = ctx.createMediaElementSource(audio);
+                    const gainNode = ctx.createGain();
+                    gainNode.gain.value = 1.5; // Boost above normal max
+                    source.connect(gainNode);
+                    gainNode.connect(ctx.destination);
+                    ctx.resume();
+                }
+            } catch (e) {
+                console.log('AudioContext no disponible:', e);
+            }
+        }
+
+        // Start on any user interaction
+        function handleInteraction() {
+            if (started) return;
+            audio.play().then(() => {
+                onPlaybackStarted();
+            }).catch(err => {
+                console.error('Error al reproducir:', err);
+            });
+        }
+
+        // Listen for any interaction
+        document.addEventListener('click', handleInteraction, { once: false });
+        document.addEventListener('touchstart', handleInteraction, { once: false });
+        document.addEventListener('touchend', handleInteraction, { once: false });
+        document.addEventListener('keydown', handleInteraction, { once: false });
+
+        // Try autoplay on load
+        window.addEventListener('load', tryAutoplay);
+        document.addEventListener('DOMContentLoaded', tryAutoplay);
+
+        // Also try after a tiny delay
+        setTimeout(tryAutoplay, 100);
+        setTimeout(tryAutoplay, 500);
+    </script>
+</body>
+
+</html>
